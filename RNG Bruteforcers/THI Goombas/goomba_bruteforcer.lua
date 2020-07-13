@@ -1,3 +1,15 @@
+--[[
+
+    Author: Xander
+    Date: June 2020
+
+    This was used to get good movement for the 3 starting goombas in THI 100c.
+    With the test inputs, at best Mario would hit 2/3 goombas so the data was
+    then sorted by distance to the 3rd goomba. A handfull of values tied here.
+    The resulting list of values allow for different coin RNG later in the level.
+
+]]
+
 local RNG = require "RNG"
 RNG.setRange(0, RNG.max)
 RNG.setCustomValueList("./Viable RNG.txt")
