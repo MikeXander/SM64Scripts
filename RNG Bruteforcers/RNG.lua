@@ -2,60 +2,90 @@ local RNG = {}
 
 RNG.address = 0x00B8EEE0
 RNG.value = 0
-RNG.maxValue = 65535
+RNG.max = 65535
+
+local A = -1
+local B = RNG.max + 1
+
+-- Examples:
+-- RNG.setRange(0, RNG.max)
+-- RNG.setRange(100, 0) [counts down]
+function RNG.setRange(a, b)
+    print("Range is from "..a.." -> "..b)
+    A = a
+    B = b
+    -- set initial value
+    -- this assumes that RNG.advance() is called
+    -- once before writing the value to memory
+    if a < b then -- incrementing
+        RNG.value = a - 1
+    else -- decrementing
+        RNG.value = a + 1
+    end
+end
 
 -- Checks to see if an RNG value is valids
 function RNG.isValid(rng)
-    if unreachable[rng] then
-        return false
-    else -- numbers not in the table default to nil and evaluates to false
-        return true
+    return not unreachable[rng]
+end
+
+function RNG.isComplete()
+    if A < B then
+        return RNG.value > B
+    else
+        return RNG.value < B
     end
 end
 
--- inverse of the method above
-function RNG.isNotValid(rng)
-    return not RNG.isValid(rng)
-end
-
--- Increments the rng value to the next valid value
-function RNG.increment()
+local function increment()
     RNG.value = RNG.value + 1
-    while RNG.isNotValid(RNG.value) do
+    while not RNG.isValid(RNG.value) do
         RNG.value = RNG.value + 1
     end
+    return RNG.value
 end
 
-function RNG.decrement()
+local function decrement()
     RNG.value = RNG.value - 1
-    while RNG.isNotValid(RNG.value) do
+    while not RNG.isValid(RNG.value) do
         RNG.value = RNG.value - 1
     end
+    return RNG.value
 end
 
--- returns an incremented value given a starting value
-function RNG.incrementReturn(rng)
-    rng = rng + 1
-    while RNG.isNotValid(rng) do
-        rng = rng + 1
+-- Move to the next RNG value
+-- this will go up or down depending on the range given in RNG.setRange()
+function RNG.advance()
+    if A < B then
+        return increment()
+    else
+        return decrement()
     end
-    return rng
 end
 
---[[
-used to take a list of line-separated numbers from
-standard input and initialize a table with them
---]]
-local function convertTableFromInput()
-    table="unreachable={\n"
-    num = io.read()
-    while (not(num == "end")) do
-        table = table.."["..num.."]=true,\n"
-        num = io.read()
+-- Used to iterate over a custom set of rng values.
+-- For example, if only the RNG values 5, 42, and 70
+-- are the ones you want to loop over, put them in a
+-- text file with each number on a new line then call
+-- RNG.setCustomValueList("path/to/values.txt")
+function RNG.setCustomValueList(path)
+    -- set all values to invalid
+    for i = 0, RNG.max do
+        unreachable[i] = true
     end
-    print(table.."}")
+    -- open the file
+    f = io.open(path, "r")
+    io.input(f)
+    -- set all values in file to valid
+    local n = io.read("*n")
+    while n ~= nil do
+        unreachable[n] = false
+        n = io.read("*n")
+    end
+    f:close()
 end
 
+-- invalid rng values
 unreachable={
 [72]=true,
 [91]=true,
