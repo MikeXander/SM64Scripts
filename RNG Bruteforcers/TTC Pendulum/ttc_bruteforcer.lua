@@ -1,5 +1,13 @@
+--[[
+
+    Author: Xander
+    Date: July 2020
+
+]]
+
 local RNG = require "RNG"
 RNG.setRange(0, RNG.max)
+RNG.setCustomValueList("D:/ttc_rng_r1.txt")
 -- 27655 had interesting conveyor movement
 
 -- constants
@@ -25,7 +33,78 @@ local start_frame = 70 -- set this to be the frame that's loaded on the savestat
 local frame = 0
 local restart = true
 
-function main()
+local bar_slot = 22
+local bar = object_addr + offset * bar_slot
+local bar_x = 0x803404A8 --bar + 0xA0
+local bar_xspd = bar + 0xAC
+local extended_x = -1141.24
+local retracted_x = -1319
+local bar_check_frame = 370
+
+local pendulum_slot = 10
+local pendulum = object_addr + offset * pendulum_slot
+local pendulum_angle = 0x8033E880 --pendulum + 0xF8
+local goal_angle = 6300
+local passed_angle = false
+local tj_frame = 0
+
+--[[
+
+    The triple jump is only possible when the pendulum passes a certain angle.
+    This notes that frame, and then gets data on a bar's position and speed.
+
+]]
+function bar_data()
+
+    if (restart) then
+        restart = false
+        frame = start_frame
+        passed_angle = false
+        tj_frame = 0
+
+        RNG.advance()
+
+        if RNG.isComplete() then
+            print ("All values tested")
+            frame = bar_check_frame + 1
+            io.close(file)
+        end
+
+        savestate.loadfile(path)
+
+    elseif (frame == start_frame + 1) then
+        memory.writeword(RNG.address, RNG.value)
+        memory.writeword(stars, RNG.value)
+
+    elseif (frame == bar_check_frame) then
+        local x = memory.readfloat(bar_x)
+        local spd = memory.readfloat(bar_xspd)
+
+        local data = "{rng:"..RNG.value..",tj:"..tj_frame..",x:"..x..",spd:"..spd.."}"
+        print(data)
+
+        local file = io.open("output.txt", "a")
+        io.output(file)
+        io.write(data.."\n")
+        io.close(file)
+
+        restart = true
+
+    elseif (passed_angle == false and frame > 280 and memory.readfloat(pendulum_angle) >= goal_angle) then
+        passed_angle = true
+        tj_frame = frame
+    end
+
+    frame = frame + 1
+end
+
+--[[
+
+    If Mario makes it up to the cog, and wall kicks within a certain angle,
+    this will output information about a pendulum which will be used next.
+
+]]
+function wk_angle_search()
 
     if (restart) then
         restart = false
@@ -69,7 +148,6 @@ function main()
             str = str .. "angle=" .. p_angle .. "}"
             print(str)
 
-
         end
 
         restart = true
@@ -78,4 +156,4 @@ function main()
     frame = frame + 1
 end
 
-emu.atinput(main)
+emu.atinput(bar_data)
