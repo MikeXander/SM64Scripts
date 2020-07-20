@@ -3,10 +3,14 @@
     Author: Xander
     Date: July 2020
 
+    This was used to get an ideal scenario for the Timed Jumps on Moving Bars TAS.
+    After narrowing down the possibilities, RNG values needed to be tested manually
+    to check if the final RNG call for the bar at the end was good or not.
+
 ]]
 
 local RNG = require "RNG"
-RNG.setRange(0, RNG.max)
+RNG.setRange(1160, RNG.max)
 RNG.setCustomValueList("D:/ttc_rng_r1.txt")
 -- 27655 had interesting conveyor movement
 
@@ -33,41 +37,41 @@ local start_frame = 70 -- set this to be the frame that's loaded on the savestat
 local frame = 0
 local restart = true
 
-local bar_slot = 22
-local bar = object_addr + offset * bar_slot
-local bar_x = 0x803404A8 --bar + 0xA0
-local bar_xspd = bar + 0xAC
-local extended_x = -1141.24
-local retracted_x = -1319
-local bar_check_frame = 370
-
-local pendulum_slot = 10
-local pendulum = object_addr + offset * pendulum_slot
+-- hardcoded because something strange was happening with the relative addrs
 local pendulum_angle = 0x8033E880 --pendulum + 0xF8
+local pendulum_accel = 0x8033E888 --pendulum + 0x100
 local goal_angle = 6300
-local passed_angle = false
-local tj_frame = 0
+
+local function output(frame)
+    local accel = memory.readfloat(pendulum_accel)
+    local data = "{\"rng\":"..RNG.value..",\"tj\":"..frame..",\"accel\":"..accel.."},"
+    print(data)
+
+    local file = io.open("output.txt", "a")
+    io.output(file)
+    io.write(data.."\n")
+    io.close(file)
+
+    restart = true
+end
 
 --[[
 
     The triple jump is only possible when the pendulum passes a certain angle.
-    This notes that frame, and then gets data on a bar's position and speed.
+    This records that frame as well as the speed data for the pendulum.
 
 ]]
-function bar_data()
+function tj_frame()
 
     if (restart) then
         restart = false
         frame = start_frame
-        passed_angle = false
-        tj_frame = 0
 
         RNG.advance()
 
         if RNG.isComplete() then
             print ("All values tested")
-            frame = bar_check_frame + 1
-            io.close(file)
+            goal_angle = 1000000 -- unreachable
         end
 
         savestate.loadfile(path)
@@ -76,23 +80,12 @@ function bar_data()
         memory.writeword(RNG.address, RNG.value)
         memory.writeword(stars, RNG.value)
 
-    elseif (frame == bar_check_frame) then
-        local x = memory.readfloat(bar_x)
-        local spd = memory.readfloat(bar_xspd)
+    elseif (280 < frame and frame < 390 and memory.readfloat(pendulum_angle) >= goal_angle) then
+        output(frame)
 
-        local data = "{rng:"..RNG.value..",tj:"..tj_frame..",x:"..x..",spd:"..spd.."}"
-        print(data)
+    elseif (frame >= 390) then
+        output(400) -- really separate these as outliers (but still include them)
 
-        local file = io.open("output.txt", "a")
-        io.output(file)
-        io.write(data.."\n")
-        io.close(file)
-
-        restart = true
-
-    elseif (passed_angle == false and frame > 280 and memory.readfloat(pendulum_angle) >= goal_angle) then
-        passed_angle = true
-        tj_frame = frame
     end
 
     frame = frame + 1
@@ -156,4 +149,4 @@ function wk_angle_search()
     frame = frame + 1
 end
 
-emu.atinput(bar_data)
+emu.atinput(tj_frame)

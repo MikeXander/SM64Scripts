@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import axes3d
 from math import sin,cos,radians
 import json
 
-HIGHLIGHTED_RNG = 63770
+HIGHLIGHTED_RNG = 25612
 
 mode = 1 # cog wk angle vs pendulum angle @ frame 250
 mode = 2 # cog wk angle vs tj frame
@@ -32,13 +32,16 @@ def pickColour(speed, accel):
 
 # parse the data
 data = []
-tj_frames = {}
+r2_data = {}
 
 with open("ttc rng data - r2.txt") as file:
     data = json.load(file)
 for info in data:
-    tj_frames[info["rng"]] = info["tj"]
-    
+    r2_data[info["rng"]] = {
+        "tj": info["tj"],
+        "accel": info["accel"]
+    }
+
 with open("ttc rng data.txt") as file:
     data = json.load(file)
     
@@ -48,15 +51,20 @@ colours = []
 RNG = []
 angles = []
 for item in data:
-    if mode == 2 and tj_frames[item["rng"]] == 0: continue
+    tj_frame = r2_data[item["rng"]]["tj"]
+    if mode == 2 and tj_frame == 0 or tj_frame == 400: continue
+    tjs.append(tj_frame)
+    
     angles.append(item["angle"])
     wk_angles.append(item["wk_angle"])
     RNG.append(str(item["rng"]))
-    tjs.append(tj_frames[item["rng"]])
+    
     if item["rng"] == HIGHLIGHTED_RNG:
         colours.append(HIGHLIGHTED_COLOUR)
-    else:
+    elif mode == 1:
         colours.append(pickColour(item["speed"], item["accel"]))
+    else: #if mode == 2
+        colours.append(pickColour(1, r2_data[item["rng"]]["accel"]))
 
 # arrange the data
 fig,ax,sc = 0,0,0
