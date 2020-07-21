@@ -19,42 +19,8 @@
 # These are pairs that must appear in your route
 # The next K lines are space separated labels (names of the points)
 
-'''
-Sample Input:
-3 2
-start 0 0 0
-a 1 1 1
-b 3 4 5
-c 7 8 9
-end 10 10 10
-0
-0
-
->>> [a, b]
->>> 17.605304096404897
-
-
-TAS Tournament Round 4 Sample Input:
-10 8
-start 604.716 -1116 -3211.966
-0 3169.815 212 -3660.273
-1 -3412.884 1152.978 -22.28
-2 -2671.604 2464 -66.016
-3 5795.959 3333 -2334.091
-4 5046.201 2000 304.377
-5 2819.269 -1016 -30.343
-6 3554 5006 -2343
-7 -2552.281 3479 -5511.287
-8 -6286.799 4042 -2140.868
-9 1587.481 1040 -180.28
-star -134.584 3949 -2347.358
-0
-1
-start 2
-
->>> ['2', '1', '9', '5', '0', '4', '3', '6']
->>> 32964.51012547283
-'''
+# This program outputs the best L paths as defined below
+NUM_OUTPUT_PATHS = 10
 
 num_reds, num_required = map(int, input().split(' '))
 
@@ -104,24 +70,26 @@ def hasRequiredPairs(path):
             
     return True
 
-min_dist = -1
-best_path = []
 paths = [] #[dist, path]
 
 def updateMin(path, dist):
     if not hasRequiredPairs(path): return
     
-    global min_dist
-    global best_path
     global points
+    global paths
     
     dist += start_dist[path[0]]
     dist += end_dist[path[-1]]
-    
-    if min_dist == -1 or dist < min_dist:
-        min_dist = dist
-        best_path = []
-        for node in path: best_path.append(points[node][0])
+
+    paths = sorted(paths, key = lambda path: path[0], reverse = True)
+    if len(paths) < NUM_OUTPUT_PATHS:
+        paths.append([dist, []])
+        for node in path: paths[len(paths) - 1][1].append(points[node][0])
+        
+    elif dist < paths[0][0]:
+        paths[0][0] = dist
+        paths[0][1] = []
+        for node in path: paths[0][1].append(points[node][0])
 
 
 def search(path, dist_so_far):
@@ -138,5 +106,8 @@ def search(path, dist_so_far):
 
 for red in range(num_reds):
     search([red], 0)
-print(best_path)
-print(min_dist)
+
+paths = sorted(paths, key = lambda path: path[0])
+for dist, path in paths:
+    for node in path: print(node, end=' ')
+    print(dist)
