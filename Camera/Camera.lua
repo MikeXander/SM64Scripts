@@ -28,6 +28,16 @@ else
 	print("Error: ROM must be U or J")
 end
 
+-- Camera update instruction location
+local Create_Camera = {
+	U = 0x287be0,
+	J = 0x2875f8,
+	offset = 0x800110
+}
+
+-- remember the original instructions to revert later
+local OriginalPos = memory.readdword(Create_Camera[ROM] + Create_Camera.offset)
+local OriginalFocus = memory.readdword(Create_Camera[ROM] + Create_Camera.offset + 0x18)
 
 local function WriteRenderCamera(camstruct)
 	if not ROM then return end
@@ -53,15 +63,14 @@ end
 -- Which allows us to manually edit the cam position
 function Cam.ApplyCameraHack(pos, focus)
 	if not ROM then return end
+	if pos ~= nil then memory.writedword(Create_Camera[ROM] + Create_Camera.offset, pos) end
+	if focus ~= nil then memory.writedword(Create_Camera[ROM] + Create_Camera.offset + 0x18, focus) end
+	memory.recompilenextall()
+end
 
-	Create_Camera = {
-		U = 0x287be0,
-		J = 0x2875f8,
-	}
-	local offset = 0x800110
-
-	if pos ~= nil then memory.writedword(Create_Camera[ROM] + offset, pos) end
-	if focus ~= nil then memory.writedword(Create_Camera[ROM] + offset + 0x18, focus) end
+function Cam.RemoveCameraHack()
+	memory.writedword(Create_Camera[ROM] + Create_Camera.offset, OriginalPos)
+	memory.writedword(Create_Camera[ROM] + Create_Camera.offset + 0x18, OriginalFocus)
 	memory.recompilenextall()
 end
 

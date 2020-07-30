@@ -63,6 +63,7 @@ function followPath()
         recalculate = true
         current_point = current_point + 1
         if current_point > num_pts - 1 then
+            Cam.RemoveCameraHack()
             print("Path complete")
         end
     end
