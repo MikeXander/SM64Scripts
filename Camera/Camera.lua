@@ -6,7 +6,7 @@
 		pfedak for proper pointer paths
 ]]
 
-local Cam = {}
+Cam = {}
 
 -- detect the ROM for appropriate pointers
 local ROM_list = {
@@ -39,17 +39,24 @@ local Create_Camera = {
 local OriginalPos = memory.readdword(Create_Camera[ROM] + Create_Camera.offset)
 local OriginalFocus = memory.readdword(Create_Camera[ROM] + Create_Camera.offset + 0x18)
 
-local function WriteRenderCamera(camstruct)
+function Cam.GetRenderCameraAddress()
 	if not ROM then return end
 
 	local offset = 0x00800000 - 0x80000000
-	gCurrentArea ={
+	gCurrentArea = {
 		U = 0x8032ddcc,
 		J = 0x8032ce6c
 	}
 	area = memory.readdword(gCurrentArea[ROM] + offset) + offset
 	root = memory.readdword(area + 0x04) + offset
 	addr = memory.readdword(root + 0x24) + offset + 0x1c
+
+	return addr
+end
+
+local function WriteRenderCamera(camstruct)
+	if not ROM then return end
+	local addr = Cam.GetRenderCameraAddress()
 
 	if camstruct.x ~= nil then memory.writefloat(addr, camstruct.x) end
 	if camstruct.y ~= nil then memory.writefloat(addr + 4, camstruct.y) end
@@ -84,5 +91,3 @@ function Cam.SetCamPos(pos)
         zfocus = nil
     })
 end
-
-return Cam

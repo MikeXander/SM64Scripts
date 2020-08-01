@@ -4,7 +4,7 @@
     ToDo: Optimize function calls: x(a[1], b[1], t, p1.pos[1], p2.pos[1]) -> x(t)
 ]]
 
-local Curve = {}
+Curve = {}
 
 local Tf = 0
 
@@ -22,10 +22,10 @@ local function x(a, b, t, X0, Xf)
     return (3*b*t*t*Tf + a*t*t*t*Tf - 3*b*t*Tf*Tf - a*t*Tf*Tf*Tf - 6*t*X0 + 6*Tf*X0 + 6*t*Xf) / (6*Tf)
 end
 
--- Expects 2 "points" as input
--- Point = {pos = {n,n,n}, vel = {n,n,n}, frame = n}
-function Curve.getPositionFunction(p1, p2)
-    Tf = p2.frame - p1.frame
+-- p1, p2 = {pos = {n,n,n}, vel = {n,n,n}, frame = n}
+-- duration = the time between each point
+function Curve.getPositionFunction(p1, p2, duration)
+    Tf = duration
     for i = 1,3 do
         a[i] = fa(p1.pos[i], p1.vel[i], p2.pos[i], p2.vel[i])
         b[i] = fb(p1.pos[i], p1.vel[i], p2.pos[i], p2.vel[i])
@@ -39,5 +39,3 @@ function Curve.getPositionFunction(p1, p2)
         }
     end
 end
-
-return Curve
