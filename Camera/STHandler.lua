@@ -102,10 +102,11 @@ function File.SetCamPosToFile(stFileHandle, pos)
 end
 
 -- It replaces the st file with the uncompressed one
-function File.ExtractSTFileWith7z()
+-- filename does not include the ".st" extension
+function File.ExtractSTFileWith7z(filename)
 	-- extract it into dir "extracted"
-	os.execute("\"\"" .. PATH .. "7z.exe\" e \"" .. PATH .. "frame.st\" -o\"" .. PATH .. "extracted/\" -aoa -y > nul\"")
-	os.remove(PATH .. "frame.st")
-	os.rename(PATH .. "extracted\\frame", PATH .. "frame.st")
+	os.execute("\"\"" .. PATH .. "7z.exe\" e \"" .. PATH .. filename .. ".st\" -o\"" .. PATH .. "extracted/\" -aoa -y > nul\"")
+	os.remove(PATH .. filename .. ".st")
+	os.rename(PATH .. "extracted\\" .. filename, PATH .. filename .. ".st")
 	os.execute("\"RD /S /Q \"" .. PATH .. "extracted\" \"")
 end
