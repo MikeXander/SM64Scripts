@@ -6,19 +6,23 @@
     The points need to be found and entered manually.
     This uses the frame number of a TAS during playback.
 
-    If only 1 point is given, it will lock the camera to that point
+    If only 1 point is given, it will lock the camera to that point.
+    If a velocity is specified for that point, it will be used as the focus point.
 
     If 2 points are given on the same frame, the 2nd point needs to have
     a "duration" for how long it should take to travel between those 2 points
 
-    ToDo:
+    Ideas:
         Custom focus (also curve fit maybe?)
         Automatic slowdown (parse points and gradually decrease speed before freeze)
         Remove savestate files
+        FOV Control
+        Points in separate file
 
     Issue (?)
         During consecutive freeze frames it attempts to save a state every frame.
         This might not be an issue since it actually takes 1 frame to write the file.
+        Freeze frame can only have a start and an end point, no middle points.
 ]]
 
 --[[
@@ -39,14 +43,39 @@ local function point(x, y, z, vx, vy, vz, f, d)
 end
 
 -- Add your points here!
-local points = {
-    point(500, -5000, 250, 50, 20, 70, 74, 0),
-    point(2651.9870264390293, -3916.550248553274, -791.8251768667485, -22.93096897783198, -33.47546661227534, -23.356448987591307, 136, 0),
-    point(2538.025571192616, -4071.9203989649955, -868.376385239575, -38.0255711926161, -48.07960103500454, -11.62361476042497, 136, 2),
-    point(2500, -4120, -880, -40, -50, -10, 137, 3),
-    point(1500, -4000, -1800, -1, -1, -1, 137, 30),
-    point(100, -1000, 500, -1, 50, -1, 180, 0)
+local points = { -- Points used for VCutM demo
+    point(-2250,-860,-3080, 5, 0, -20, 395),
+    point(-2000, -2000, -5900, 20, 10, -40, 433),
+    point(-2000, -2000, -5900, -90, -30, -40, 434),
+    point(-1000, -1800, -7000, 50, 20, 10, 445),
+    point(-1000, -1800, -7000, 50, -10, -20, 446),
+    point(1500, -100, -7000, 40, 0, 20, 505),
+    point(2500,  -800, -6900, 60, 10, 5, 530),
+    point(3300, 0, -6700, 50, 0, 10, 549),
+    point(3630, 100, -6000, -10, 30, -10, 560)
 }
+
+--[[ Points used for TTC Timed Jumps on Moving Bars showcase
+local points = {
+    point(800, -3800, 0, 80, 30, 15, 74),
+    point(1500, -4500, -1750, -70, 30, -30, 159),
+    point(1500, -4500, -1750, -50, -10, -70, 160),
+    point(-800, -3500, -1500, 20, 50, 60, 160, 60),
+    point(-563, -2914, -998, 19, 48, 25, 172),
+    point(5, -2128, -1065, 17, 18, -17, 200),
+    point(0, -1700, -800, 0, 10, 5, 240),
+    point(0, -1700, -800, 50, 0, -20, 241),
+    point(-300, -300, -1000, 10, 20, 30, 260),
+    point(-1900, -200, -600, -20, 30, -5, 280),
+    point(-1900, 400, -600, -10, 50, -10, 294),
+    point(-1900, 400, -600, -40, 0, -10, 298),
+    point(-900, 400, -2700, 100, 0, -10, 298, 60),
+    point(-900, 400, -2700, 80, -30, -20, 299),
+    point(300, 1500, -1700, -30, 50, 50, 345),
+    point(300, 1500, -1700, 30, 50, 50, 346),
+    point(-100, 3000, -1500, 0, 30, 0, 370)
+}
+]]
 
 --[[
     These are sample point arrays
@@ -126,13 +155,24 @@ local function recalculate()
     end
 end
 
+function HD()
+    Cam.HideHUD()
+    Cam.SetLevelOfDetail(0)
+end
+
 function main()
     if current_point > num_pts - 1 then
         --Cam.RemoveCameraHack()
         return -- no more points
     end
 
+    HD()
     frame = emu.samplecount()
+
+    if 553 < frame and frame < 560 then
+        --Cam.ApplyCameraHack(nil, 0)
+        --Cam.SetFocus({3358,-240,-5948})
+    end
 
     if save_frame[frame] then -- needs 1 frame to create file
         Cam.ApplyCameraHack(0, nil)
@@ -189,16 +229,29 @@ end
 
 -- Keep the camera in 1 location
 function lockPos()
+    HD()
     Cam.ApplyCameraHack(0, nil)
     Cam.SetCamPos({points[1].pos[1], points[1].pos[2], points[1].pos[3]})
+    if (points[1].vel[1] ~= nil) then -- use velocity as focus point
+        Cam.ApplyCameraHack(nil, 0)
+        Cam.SetFocus({points[1].vel[1], points[1].vel[2], points[1].vel[3]})
+    end
+    --memory.writefloat(0x80189FC0, 60)
+    --memory.writefloat(0x8033C5A4, 60) -- fix wide FOV on U
 end
 
 if num_pts < 1 then
-    print("Error: must enter at least 1 point")
+    print("No points entered. Hiding HUD and forcing high detail")
+    emu.atinput(HD)
 
 elseif num_pts == 1 then
-    print("Locking position to point")
-    emu.atinput(lockPos)
+    if points[1].pos[1] == points[1].vel[1] and points[1].pos[3] == points[1].vel[3] then
+        -- emulation stops when it tries to do this. I dont know why
+        print("Error: cannot look straight up or down")
+    else
+        print("Locking position to point")
+        emu.atinput(lockPos)
+    end
 
 elseif num_pts > 1 then
     print(string.format("Following %d points", num_pts))

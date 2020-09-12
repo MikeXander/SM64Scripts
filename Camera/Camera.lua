@@ -39,6 +39,23 @@ local Create_Camera = {
 local OriginalPos = memory.readdword(Create_Camera[ROM] + Create_Camera.offset)
 local OriginalFocus = memory.readdword(Create_Camera[ROM] + Create_Camera.offset + 0x18)
 
+local HUD = {
+	U = 0x8033b26a,
+	J = 0x80339efa
+}
+
+local LEVEL_INDEX = {
+	U = 0x8033BAC6,
+	J = 0x8033A756
+}
+
+local OriginalLevelIndex = 0
+
+local LEVEL_OF_DETAIL = {
+	U = 0x8027BE20,
+	J = 0x8027B870
+}
+
 function Cam.GetRenderCameraAddress()
 	if not ROM then return end
 
@@ -90,4 +107,33 @@ function Cam.SetCamPos(pos)
         yfocus = nil,
         zfocus = nil
     })
+end
+
+function Cam.SetFocus(pos)
+	WriteRenderCamera({
+        x = nil,
+        y = nil,
+        z = nil,
+        xfocus = pos[1],
+        yfocus = pos[2],
+        zfocus = pos[3]
+    })
+end
+
+function Cam.HideHUD()
+	memory.writeword(HUD[ROM], 0x0) -- stars, lives, cam
+	OriginalLevelIndex = memory.readword(LEVEL_INDEX[ROM])
+	memory.writeword(LEVEL_INDEX[ROM], 0) -- coins
+end
+
+function Cam.ShowHUD()
+	memory.writeword(HUD[ROM], 0x3F)
+	memory.writeword(LEVEL_INDEX[ROM], OriginalLevelIndex)
+end
+
+-- 0 is high poly mode
+-- 8 is low poly mode
+function Cam.SetLevelOfDetail(val)
+	if val ~= 0 and val ~= 8 then return end
+	memory.writeword(LEVEL_OF_DETAIL[ROM], val)
 end

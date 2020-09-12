@@ -18,13 +18,17 @@ def point(x, y, z, vx, vy, vz, f, d = 0):
         "duration": d
     }
 
-points = [
-    point(500, -5000, 250, 50, 20, 70, 74),
-    point(2500, -4120, -880, -40, -50, -10, 137),
-    point(1500, -4000, -1800, -1, -1, -1, 137, 30),
-    point(100, -1000, 500, -1, 50, -1, 180)
+points = [ # VCutM Points
+    point(-2150, -2600, -4150, 10, 0, -50, 375),
+    point(-2000, -2000, -5900, 20, 10, -40, 433),
+    point(-2000, -2000, -5900, -90, -30, -40, 434),
+    point(-1000, -1800, -7000, 50, 20, 10, 445),
+    point(-1000, -1800, -7000, 50, -10, -20, 446),
+    point(1500, -100, -7000, 40, 0, 20, 505),
+    point(2500,  -800, -6900, 60, 10, 5, 530),
+    point(3300, 0, -6700, 50, 0, 10, 549),
+    point(4900, 300, -5300, -15, 50, -10, 582)
 ]
-
 
 # Curvefit math
 # Source: https://stackoverflow.com/questions/4362498/curve-fitting-points-in-3d-space
@@ -55,15 +59,33 @@ def getPositionFunction(p1, p2, duration):
     return lambda frame: [fx(a[i], b[i], frame - p1["frame"], p1["pos"][i], p2["pos"][i]) for i in range(3)]
 
 
-# additional functions for testing
-def printPath(p1, p2):
-    position = getPositionFunction(p1, p2, p2["frame"] - p1["frame"])
-    for i in range(p2["frame"] - p1["frame"]):
-        print(i + p1["frame"], position(i + p1["frame"]))
-#printPath(points[0], points[1])
 
+# additional functions for testing
 def vel(p1, p2):
     return [p2[i] - p1[i] for i in range(3)]
+'''
+print(vel(
+    [5, -2128, -1065],
+    [22.32684100115744, -2110.012550636574, -1081.908890335648]
+))
+'''
+
+def printPath(p1, p2):
+    if p2["duration"] > 0: p2["frame"] += p2["duration"]
+    position = getPositionFunction(p1, p2, p2["frame"] - p1["frame"])
+    for i in range(p2["frame"] - p1["frame"]):
+        x,y,z = position(i + p1["frame"])
+        frame = i + p1["frame"]
+        vx,vy,vz = vel(p2["pos"], position(i + p1["frame"]))
+        if i < p2["frame"] - p1["frame"] - 1:
+            vx,vy,vz = vel(position(i + p1["frame"] + 1), position(i + p1["frame"]))
+        print('point(%1.1f, %1.1f, %1.1f, %1.1f, %1.1f, %1.1f, %d)' % (x,y,z,vx,vy,vz,frame))
+'''
+printPath(
+    point(3300, 0, -6700, 50, 0, 10, 549),
+    point(4900, 300, -5300, -15, 50, -10, 582)
+)
+'''
 
 # given 2 consecutive points, inserts 2 more
 def smoothTransition(p1, p2):

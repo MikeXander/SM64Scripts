@@ -4,13 +4,30 @@
     Only works during TAS playback.
 ]]
 
-local startFrame = 74
-local endFrame = 414
+local startFrame = 400
+local endFrame = 575
 
 local mario_addr_us = 0x00B3B170
 local mario_addr_jp = 0x80339E00
+local mario_addr = nil
 
-local mario_addr = mario_addr_us -- switch between U and J
+-- Auto detect ROM
+local ROM_list = {
+	addr = 0x802F0000,
+	U = 0xC58400A4,
+	J = 0x27BD0020
+}
+
+local ROM = memory.readdword(ROM_list.addr)
+local mario_addr = nil
+
+if ROM == ROM_list.U then
+	mario_addr = mario_addr_us
+elseif ROM == ROM_list.J then
+	mario_addr = mario_addr_jp
+else
+	print("Error: ROM must be U or J")
+end
 
 local Mario = {
     X = mario_addr + 0x3C,
