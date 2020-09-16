@@ -18,7 +18,7 @@ This is done by removing the render camera instructions, and instead rendering i
 
 If 2 points have the same target frame, it will freeze the game while it traverses between those points - creating the bullet-time effect from the movie The Matrix. This is achieved by saving a state, and editing the rendered camera within the savestate file before loading it.
 
-![Example Gameplay with Custom Camera](https://media.discordapp.net/attachments/196442189604192256/754366539318165604/TJOMB_CustomCamera.gif?width=634&height=475)
+<img src="/Camera/ExampleCustomCamera.gif?raw=true" width="640px">
 
 There is also a helper lua script which will export Mario's position. This can then be used with the python script to visualize where the camera will go. The red path is Mario, the orange path is the camera, and the blue dots are the points it travels through:
 
