@@ -11,7 +11,7 @@ from mpl_toolkits.mplot3d import axes3d
 #       a different path
 
 '''
-Sample Input:
+Sample Input (from https://youtu.be/8tzxiE2Xycw):
 10
 Start 2685.03 2560 1902.55
 29 -250.00 2950.00 1770.00
@@ -54,7 +54,7 @@ def add_point(point, colour):
     for i in range(3):
         [x, y, z][i].append(point[i + 1])
     colours.append(colour)
-    
+
 add_point(start, 'yellow')
 for coin in reds: add_point(coin, 'red')
 add_point(end, 'yellow')
@@ -81,5 +81,5 @@ for i in range(1, len(route)):
     add_line(reds_dict[route[i - 1]], reds_dict[route[i]], 'black')
 add_line(start[1::], reds_dict[route[0]], 'green')
 add_line(end[1::], reds_dict[route[-1]], 'blue')
-    
+
 plt.show()
