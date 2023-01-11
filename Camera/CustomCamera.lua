@@ -12,17 +12,10 @@
     If 2 points are given on the same frame, the 2nd point needs to have
     a "duration" for how long it should take to travel between those 2 points
 
-    Ideas:
-        Custom focus (also curve fit maybe?)
-        Automatic slowdown (parse points and gradually decrease speed before freeze)
-        Remove savestate files
+    Ideas (ToDo):
         FOV Control
         Points in separate file
-
-    Issue (?)
-        During consecutive freeze frames it attempts to save a state every frame.
-        This might not be an issue since it actually takes 1 frame to write the file.
-        Freeze frame can only have a start and an end point, no middle points.
+        Allow freeze frames to have middle points (not just a start and an end point)
 ]]
 
 --[[
@@ -34,6 +27,13 @@
 ]]
 
 local function point(x, y, z, vx, vy, vz, f, d)
+	-- point(x, y, z, d)
+	if vx ~= nil and vy == nil and vz == nil and f == nil then
+		d = vx
+		vx = 0
+		vy = 0
+		vz = 0
+	end
     return {
         pos = {x, y, z},
         vel = {vx, vy, vz},
@@ -43,64 +43,27 @@ local function point(x, y, z, vx, vy, vz, f, d)
 end
 
 -- Add your points here!
-local points = { -- Points used for VCutM demo
-    point(-2250,-860,-3080, 5, 0, -20, 395),
-    point(-2000, -2000, -5900, 20, 10, -40, 433),
-    point(-2000, -2000, -5900, -90, -30, -40, 434),
-    point(-1000, -1800, -7000, 50, 20, 10, 445),
-    point(-1000, -1800, -7000, 50, -10, -20, 446),
-    point(1500, -100, -7000, 40, 0, 20, 505),
-    point(2500,  -800, -6900, 60, 10, 5, 530),
-    point(3300, 0, -6700, 50, 0, 10, 549),
-    point(3630, 100, -6000, -10, 30, -10, 560)
-}
-
---[[ Points used for TTC Timed Jumps on Moving Bars showcase
+-- The following points are used with the HMC Swimming Beast TAS
 local points = {
-    point(800, -3800, 0, 80, 30, 15, 74),
-    point(1500, -4500, -1750, -70, 30, -30, 159),
-    point(1500, -4500, -1750, -50, -10, -70, 160),
-    point(-800, -3500, -1500, 20, 50, 60, 160, 60),
-    point(-563, -2914, -998, 19, 48, 25, 172),
-    point(5, -2128, -1065, 17, 18, -17, 200),
-    point(0, -1700, -800, 0, 10, 5, 240),
-    point(0, -1700, -800, 50, 0, -20, 241),
-    point(-300, -300, -1000, 10, 20, 30, 260),
-    point(-1900, -200, -600, -20, 30, -5, 280),
-    point(-1900, 400, -600, -10, 50, -10, 294),
-    point(-1900, 400, -600, -40, 0, -10, 298),
-    point(-900, 400, -2700, 100, 0, -10, 298, 60),
-    point(-900, 400, -2700, 80, -30, -20, 299),
-    point(300, 1500, -1700, -30, 50, 50, 345),
-    point(300, 1500, -1700, 30, 50, 50, 346),
-    point(-100, 3000, -1500, 0, 30, 0, 370)
+    point(-7308.4, 5792.7,  9694.2, 0,0,0, 29),
+    point(-9380.9, 5015.5,  7751.3, 0,0,0,  65),
+    point(-9830.5, 4976.1,  1060.8, 0,0,0, 200),
+    point(-7250.6, 2568.0, -1022.3, 0,0,0, 245),
+    point(-6626.2, 2458.7,  -888.9, 0,0,0, 275)
 }
-]]
 
---[[
-    These are sample point arrays
-    They test different transition cases
-]]
---[[
-local points_cam_path = {
-    point(1940, -4120, -880, 100, -50, 10, 74),
-    point(1800, -4000, -2000, -1, -1, -1, 170),
-    point(100, -1000, 500, -1, 50, -1, 260)
+-- Note: you can give the focus points velocities as well
+-- Ex: point(-6574.4, 1608.8, 1517.3, 10, -10, 20, nil, 200-65)
+local focus_points = {
+    point(-7152.0, 3150.0, 7181.0, 29), -- first point duration = starting frame
+    point(-7135.4, 2285.5, 7164.4, 65-29), -- next point duration = how long to reach next point
+    point(-6574.4, 1608.8, 1517.3, 200-65),
+    point(-5786.3, 1558.1, 0722.3, 130+63)
 }
-local points_freeze_freeze = {
-    point(500, -5000, 250, 50, 20, 70, 136),
-    point(2538, -4072, -868, -38, -48, -12, 136, 30), -- on the same frame as previous, lasts 30 frames
-    point(2500, -4120, -880, -40, -50, -10, 137),
-    point(1500, -4000, -1800, -1, -1, -1, 137, 30),
+-- {start, stop, real_frames_per_ingame_frame} (inclusive numbers)
+local SLOWMO_RANGES = { -- you can list multiple
+    {263,275,10}
 }
-local points_path_freeze_path_freeze = {
-    point(2200, -4500, -500, 0, 0, 0, 74),
-    point(1940, -4120, -880, 20, -50, -10, 137),
-    point(1500, -4000, -1800, -1, -1, -1, 137, 30),
-    point(100, -1000, 500, -1, 50, -1, 180),
-    point(100, -500, 500, -1, 50, -1, 180, 10)
-}
-]]
 
 PATH = debug.getinfo(1).source:sub(2):match("(.*\\)") -- cwd of script
 dofile(PATH .. "Camera.lua")
@@ -108,42 +71,63 @@ dofile(PATH .. "CurveFitter.lua")
 dofile(PATH .. "STHandler.lua")
 
 local current_point = 1
+local current_focus_point = 1
 local iteration = -1
+local total_frame_count = 0 -- increase by 1 per iteration or frame (tick count)
+local focus_recalculate_iteration = -1 -- the frame to recalculate focus stuff
 local p1 = {}
 local p2 = {}
 local position = nil
+local focus_position = nil
 local stFileHandle = nil
-local loadNextFile = nil
+local SLOWMODE = {}
+local REAL_FRAMES_PER_FRAME = 2
+local file_delete_stack = {}
+local file_delete_stack_len = 0
 
---[[
-    Parse points to find:
-        the number of points
-        the frames where it needs to savestate for freeze frames
-]]
-local num_pts = 0
+-- Parse points to find the frames where it needs to savestate for freeze frames
+local num_pts = #points
 local save_frame = {}
-for i,p in pairs(points) do
-    num_pts = num_pts + 1
-    if num_pts > 1 and p.frame == points[i - 1].frame then
+for i, p in pairs(points) do
+    if points[i - 1] and p.frame == points[i - 1].frame then
         save_frame[p.frame - 1] = true
     end
 end
 
+-- Parse the slow-mo frame ranges and set it to save accordingly
+for k, range in pairs(SLOWMO_RANGES) do
+	for f = range[1], range[2] do
+		SLOWMODE[f] = range[3]
+		save_frame[f - 1] = true
+	end
+end
+
 -- set the right function and flag to move the camera
-local function recalculate()
+local function recalculate(focus)
+	if focus then
+		focus_recalculate_iteration = total_frame_count + focus_points[current_focus_point+1].duration
+		focus_points[current_focus_point].frame = total_frame_count -- used in curve fitter
+		focus_position = Curve.getPositionFunction(
+			focus_points[current_focus_point],
+			focus_points[current_focus_point + 1],
+			focus_points[current_focus_point + 1].duration
+		)
+        local fp1 = focus_points[current_focus_point]
+        local fp2 = focus_points[current_focus_point + 1]
+        print("F: {"..fp1.pos[1]..","..fp1.pos[2]..","..fp1.pos[3].."} -> {"..fp2.pos[1]..","..fp2.pos[2]..","..fp2.pos[3].."} ("..fp2.duration..")")
+		return
+	end
+	
     if stFileHandle ~= nil then
         stFileHandle:close()
         stFileHandle = nil
-    end
-
-    if loadNextFile ~= nil then
-        stFileHandle = io.open(PATH .. loadNextFile .. ".st")
-        loadNextFile = nil
+		file_delete_stack[file_delete_stack_len + 1] = PATH..p1.frame..".st"
+		file_delete_stack_len = file_delete_stack_len + 2 -- 1f buffer
     end
 
     p1 = points[current_point]
     p2 = points[current_point + 1]
-    print(p1.frame..": {"..p1.pos[1]..","..p1.pos[2]..","..p1.pos[3].."} -> "..p2.frame..": {"..p2.pos[1]..","..p2.pos[2]..","..p2.pos[3].."}")
+    print("C "..p1.frame..": {"..p1.pos[1]..","..p1.pos[2]..","..p1.pos[3].."} -> "..p2.frame..": {"..p2.pos[1]..","..p2.pos[2]..","..p2.pos[3].."}")
 
     if p1.frame == p2.frame then -- freeze frame
         position = Curve.getPositionFunction(p1, p2, p2.duration)
@@ -161,50 +145,84 @@ function HD()
 end
 
 function main()
-    if current_point > num_pts - 1 then
+	if file_delete_stack_len then -- clean-up files
+		if file_delete_stack[file_delete_stack_len] then
+			os.remove(file_delete_stack[file_delete_stack_len])
+		end
+		file_delete_stack_len = file_delete_stack_len - 1
+	end
+	
+    if current_point > num_pts - 1 then -- no more points
         --Cam.RemoveCameraHack()
-        return -- no more points
+        return
     end
 
     HD()
     frame = emu.samplecount()
+	REAL_FRAMES_PER_FRAME = SLOWMODE[frame] or 0
 
-    if 553 < frame and frame < 560 then
-        --Cam.ApplyCameraHack(nil, 0)
-        --Cam.SetFocus({3358,-240,-5948})
-    end
+	--[[print(string.format(
+		"f%d: iter:%d/%d save:%d slow:%d file:%d",
+		frame, iteration, REAL_FRAMES_PER_FRAME,
+		save_frame[frame] and 1 or 0,
+		SLOWMODE[frame] or 0,
+		stFileHandle and 1 or 0
+	))]]
 
-    if save_frame[frame] then -- needs 1 frame to create file
-        Cam.ApplyCameraHack(0, nil)
+	-- needs 1 frame to create file
+    if save_frame[frame] and (
+		iteration < 0 or
+		(p2.duration and iteration == p2.duration-1) or
+		(SLOWMODE[frame+1] and iteration == REAL_FRAMES_PER_FRAME-1)
+	) then
+        -- ensure camera is hacked, always hack cam, hack focus accordingly
+        Cam.ApplyCameraHack(0, current_focus_point < #focus_points and 0 or nil)
         savestate.savefile(PATH .. (frame + 1) .. ".st")
     end
 
     -- needs to be checked separately for consecutive freeze frames
     if save_frame[frame - 1] then
-        if p1.frame < frame then
-            current_point = current_point + 1
-            recalculate()
-        end
         File.ExtractSTFileWith7z(frame)
         save_frame[frame - 1] = false -- only extract once
-        if iteration == 1 then
-            stFileHandle = io.open(PATH .. frame .. ".st", "r+b")
-        else
-            loadNextFile = frame -- load this file once next points are loaded
-        end
+        stFileHandle = io.open(PATH .. frame .. ".st", "r+b")
+		if SLOWMODE[frame] then
+			iteration = 0
+		end
     end
 
-    if frame < points[1].frame - 1 then
-        return -- before hacked cam starts
+    if frame < points[1].frame - 1 then -- before hacked cam starts
+        return -- side effect is that focus points must occur after cam points
+    end
+	
+	if #focus_points > 0 and frame == focus_points[1].duration then -- duration of first = start frame
+		total_frame_count = frame
+		recalculate(true)
+	end
+
+    -- surprisingly it doesn't matter if it's loading a file or not... ?
+    if #focus_points and focus_position then -- edit focus in RAM
+        Cam.ApplyCameraHack(nil, 0) -- ensure focus is moved
+        Cam.SetFocus(focus_position(total_frame_count))
     end
 
     -- move the camera position
     if iteration == -1 then
         Cam.ApplyCameraHack(0, nil) -- ensure the camera is moved
-        Cam.SetCamPos(position(frame))
+		local t = frame
+		-- on the last frame of a slowmo frame, iter = -1 + no file loaded
+		if SLOWMODE[frame] then
+			t = frame + (REAL_FRAMES_PER_FRAME - 1) / REAL_FRAMES_PER_FRAME
+		end
+        Cam.SetCamPos(position(t))
 
     elseif stFileHandle ~= nil then -- bullet time cam
-        File.SetCamPosToFile(stFileHandle, position(iteration + p1.frame))
+		local t = 0
+		if SLOWMODE[frame] then
+			t = frame + iteration / REAL_FRAMES_PER_FRAME
+		else -- p2.duration ~= nil
+			t = p1.frame + iteration
+		end
+        File.SetCamPosToFile(stFileHandle, position(t))
         iteration = iteration + 1
         stFileHandle:close()
         savestate.loadfile(PATH .. frame .. ".st")
@@ -212,19 +230,39 @@ function main()
     end
 
     -- advance to next sequence
-    if (iteration <= 1 and frame == p2.frame) or iteration == p2.duration then
+    if (iteration <= 1 and frame == p2.frame - 1) or iteration == p2.duration then
         current_point = current_point + 1
 
         if current_point > num_pts - 1 then
             if stFileHandle ~= nil then
                 stFileHandle:close()
             end
-            print("Finished")
+            print("Finished Cam Movement")
 
         else -- setup next function
             recalculate()
         end
+	elseif SLOWMODE[frame] and iteration == REAL_FRAMES_PER_FRAME - 1 then
+		iteration = -1
+		stFileHandle:close()
+		stFileHandle = nil
+		file_delete_stack[file_delete_stack_len + 1] = PATH..frame..".st"
+		file_delete_stack_len = file_delete_stack_len + 2 -- 1f buffer
     end
+	
+	-- advance to next sequence for focus points
+	total_frame_count = total_frame_count + 1
+	if #focus_points and total_frame_count == focus_recalculate_iteration then
+		current_focus_point = current_focus_point + 1
+		
+		if current_focus_point == #focus_points then
+			focus_recalculate_iteration = -1
+			focus_position = nil
+			print("Finished Focus Movement")
+		else
+			recalculate(true)
+		end
+	end
 end
 
 -- Keep the camera in 1 location

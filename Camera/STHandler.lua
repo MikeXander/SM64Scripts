@@ -6,6 +6,7 @@
 File = {}
 
 local PATH = debug.getinfo(1).source:sub(2):match("(.*\\)")
+local LibDeflate = dofile(PATH .. "LibDeflate.lua")
 --local Cam = require "Camera" -- Cam must be loaded before this file
 
 -- no error checking
@@ -109,4 +110,18 @@ function File.ExtractSTFileWith7z(filename)
 	os.remove(PATH .. filename .. ".st")
 	os.rename(PATH .. "extracted\\" .. filename, PATH .. filename .. ".st")
 	os.execute("\"RD /S /Q \"" .. PATH .. "extracted\" \"")
+end
+
+-- On some computers Mupen refuses to run 7Zip...
+-- you can replace File.ExtractSTFileWith7z in the main script with
+-- this one if that happens. This function is much slower though.
+function File.ExtractSTFileWithLibDeflate(filename)
+	local f = io.open(PATH .. filename .. ".st")
+	local data = f:read("*all")
+	f:close()
+	os.remove(PATH .. filename .. ".st")
+	local out = io.open(PATH .. filename .. "st", "wb")
+	local decompressed = LibDeflate:DecompressDeflate(data:sub(11, #data-8))
+	out:write(decompressed)
+	out:close()
 end

@@ -109,6 +109,9 @@ function Cam.SetCamPos(pos)
     })
 end
 
+-- sets both render camera and actual camera focus
+-- So, when the focus is no longer overwritten, the game will handle
+-- making it ease back into its intended position
 function Cam.SetFocus(pos)
 	WriteRenderCamera({
         x = nil,
@@ -118,6 +121,30 @@ function Cam.SetFocus(pos)
         yfocus = pos[2],
         zfocus = pos[3]
     })
+	-- this is so that visualize-position.lua will actually see the change
+	if ROM == nil then return end
+	local addr = ({U = 0x8033C698, J = 0x8033B328})[ROM]
+	if pos[1] ~= nil then memory.writefloat(addr + 0x0, pos[1]) end
+	if pos[2] ~= nil then memory.writefloat(addr + 0x4, pos[2]) end
+	if pos[3] ~= nil then memory.writefloat(addr + 0x8, pos[3]) end
+end
+
+function Cam.GetCamPos()
+	local addr = Cam.GetRenderCameraAddress()
+	return {
+		memory.readfloat(addr),
+		memory.readfloat(addr + 4),
+		memory.readfloat(addr + 8)
+	}
+end
+
+function Cam.GetFocusPos()
+	local addr = Cam.GetRenderCameraAddress()
+	return {
+		memory.readfloat(addr + 12),
+		memory.readfloat(addr + 16),
+		memory.readfloat(addr + 20)
+	}
 end
 
 function Cam.HideHUD()
@@ -136,4 +163,15 @@ end
 function Cam.SetLevelOfDetail(val)
 	if val ~= 0 and val ~= 8 then return end
 	memory.writeword(LEVEL_OF_DETAIL[ROM], val)
+end
+
+function Cam.SetFOV(val)
+	if val == nil then val = 45 end
+	if ROM == nil then
+		return
+	elseif ROM == "U" then
+		memory.writefloat(0x8033C5A4, val)
+	elseif ROM == "J" then
+		memory.writefloat(0x80189FC0, val)
+	end
 end
