@@ -116,11 +116,11 @@ end
 -- you can replace File.ExtractSTFileWith7z in the main script with
 -- this one if that happens. This function is much slower though.
 function File.ExtractSTFileWithLibDeflate(filename)
-	local f = io.open(PATH .. filename .. ".st")
+	local f = io.open(PATH .. filename .. ".st", "rb")
 	local data = f:read("*all")
 	f:close()
 	os.remove(PATH .. filename .. ".st")
-	local out = io.open(PATH .. filename .. "st", "wb")
+	local out = io.open(PATH .. filename .. ".st", "wb")
 	local decompressed = LibDeflate:DecompressDeflate(data:sub(11, #data-8))
 	out:write(decompressed)
 	out:close()

@@ -182,7 +182,7 @@ function main()
 
     -- needs to be checked separately for consecutive freeze frames
     if save_frame[frame - 1] then
-        File.ExtractSTFileWith7z(frame)
+        File.ExtractSTFileWithLibDeflate(frame)
         save_frame[frame - 1] = false -- only extract once
         stFileHandle = io.open(PATH .. frame .. ".st", "r+b")
 		if SLOWMODE[frame] then
