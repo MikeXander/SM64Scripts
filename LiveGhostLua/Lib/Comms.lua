@@ -47,7 +47,7 @@ return {
         if ID == nil or data.offset == nil or data.position == nil or
             data.position.x == nil or data.position.y == nil or data.position.z == nil or
             data.animationIndex == nil or data.animationFrame == nil or
-            data.pitch == nil or data.yaw == nil or data.roll then
+            data.pitch == nil or data.yaw == nil or data.roll == nil then
             return ""
         end
         return string.format(
